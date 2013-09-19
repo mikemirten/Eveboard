@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <?= $this->tag->getTitle() ?>
+    <?= $this->tag->javascriptInclude('js/jquery.min.js') ?>
+    <?= $this->tag->stylesheetLink('css/main.css') ?>
+</head>
+<body>
+<div class="container">
+	<?= $this->flash() ?>
+	<?= $this->getContent() ?>
+</div>
+</body>
+</html>
