@@ -4,6 +4,7 @@ use Phalcon\Mvc\Application;
 use Phalcon\Config\Adapter\Ini;
 use Phalcon\Mvc\View;
 use Phalcon\DI\FactoryDefault as Di;
+use Phalcon\Db\Adapter\Pdo\Mysql;
 
 define('ROOT_PATH', __DIR__);
 
@@ -19,12 +20,21 @@ $loader->registerNamespaces([
 ]);
 
 $loader->registerDirs([
-	APP_PATH . DIRECTORY_SEPARATOR . 'controllers'
+	APP_PATH . DIRECTORY_SEPARATOR . 'controllers',
+	APP_PATH . DIRECTORY_SEPARATOR . 'models'
 ]);
 
 $loader->register();
 
 $di = new Di();
+
+$di->set('config', function() {
+	return new Ini(CONF_PATH . DIRECTORY_SEPARATOR . 'settings.ini');
+});
+
+$di->set('db', function() use($di) {
+	return new Mysql($di->get('config')->db->toArray());
+});
 
 $di->set('view', function() {
 	$view = new View();
@@ -32,10 +42,6 @@ $di->set('view', function() {
 	$view->setMainView('layout');
 	
 	return $view;
-});
-
-$di->set('config', function() {
-	return new Ini(CONF_PATH . DIRECTORY_SEPARATOR . 'settings.ini');
 });
 
 $application = new Application($di);
