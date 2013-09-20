@@ -45,6 +45,8 @@ class Parser {
 	const INVOLVED_SECURITY = 'Security';
 	const INVOLVED_DAMAGE   = 'Damage Done';
 	
+	const VALUE_UNKNOWN = 'Unknown';
+	
 	const STATE_COMMON   = 0;
 	const STATE_INVOLVED = 1;
 	const STATE_LOST     = 2;
@@ -152,6 +154,10 @@ class Parser {
 		$this->parse();
 		
 		if (isset($this->_victimData[self::VICTIM_NAME])) {
+			if ($this->_victimData[self::VICTIM_NAME] === self::VALUE_UNKNOWN) {
+				return;
+			}
+			
 			return $this->_victimData[self::VICTIM_NAME];
 		}
 	}
@@ -178,6 +184,10 @@ class Parser {
 		$this->parse();
 		
 		if (isset($this->_victimData[self::VICTIM_CORP])) {
+			if ($this->_victimData[self::VICTIM_CORP] === self::VALUE_UNKNOWN) {
+				return;
+			}
+			
 			return $this->_victimData[self::VICTIM_CORP];
 		}
 	}
@@ -191,6 +201,10 @@ class Parser {
 		$this->parse();
 		
 		if (isset($this->_victimData[self::VICTIM_ALLIANCE])) {
+			if ($this->_victimData[self::VICTIM_ALLIANCE] === self::VALUE_UNKNOWN) {
+				return;
+			}
+			
 			return $this->_victimData[self::VICTIM_ALLIANCE];
 		}
 	}
@@ -204,6 +218,10 @@ class Parser {
 		$this->parse();
 		
 		if (isset($this->_victimData[self::VICTIM_FACTION])) {
+			if ($this->_victimData[self::VICTIM_FACTION] === self::VALUE_UNKNOWN) {
+				return;
+			}
+			
 			return $this->_victimData[self::VICTIM_FACTION];
 		}
 	}
@@ -230,6 +248,10 @@ class Parser {
 		$this->parse();
 		
 		if (isset($this->_victimData[self::VICTIM_MOON])) {
+			if ($this->_victimData[self::VICTIM_MOON] === self::VALUE_UNKNOWN) {
+				return;
+			}
+			
 			return $this->_victimData[self::VICTIM_MOON];
 		}
 	}
