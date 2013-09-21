@@ -5,7 +5,7 @@ CREATE TABLE `kills` (
 	`corp_id`      int unsigned,
 	`faction_id`   int unsigned,
 	`item_id`      int unsigned NOT NULL COMMENT 'Destroyed item',
-	`system_id`    int unsigned NOT NULL,
+	`system_id`    int unsigned,
 	`moon_id`      int unsigned,
 	`committed`    timestamp NOT NULL,
 	`security`     int signed,
@@ -21,17 +21,19 @@ CREATE TABLE `involved` (
 	`alliance_id` int unsigned,
 	`corp_id`     int unsigned,
 	`faction_id`  int unsigned,
-	`ship_id`     int unsigned NOT NULL,
+	`ship_id`     int unsigned,
 	`weapon_id`   int unsigned,
-	`damage_done` bigint unsiged,
-	UNIQUE KEY `involved_player` (`kill_id`, `player_id`)
+	`security`    int signed,
+	`damage_done` bigint NOT NULL DEFAULT 0,
+	`final_blow`  boolean NOT NULL DEFAULT false,
+	PRIMARY KEY (`kill_id`, `player_id`)
 );
 
 CREATE TABLE `destroyed_items` (
 	`kill_id` int unsigned NOT NULL,
 	`item_id` int unsigned NOT NULL,
 	`flags`   int unsigned NOT NULL DEFAULT 0 COMMENT 'in cargo, copy...',
-	UNIQUE KEY `destroyed item` (`kill_id`, `item_id`)
+	PRIMARY KEY (`kill_id`, `item_id`)
 );
 
 CREATE TABLE `players` (
@@ -62,8 +64,14 @@ CREATE TABLE `systems` (
 );
 
 CREATE TABLE `moons` (
-	`moon_id`   int unsigned NOT NULL PRIMARY KEY auto_increment,,
+	`moon_id`   int unsigned NOT NULL PRIMARY KEY auto_increment,
 	`system_id` int unsigned NOT NULL,
 	`title`     varchar(256) NOT NULL,
 	UNIQUE KEY `system_moon` (`system_id`, `title`)
+);
+
+CREATE TABLE `items` (
+	`item_id` int unsigned NOT NULL PRIMARY KEY auto_increment,
+	`title`   varchar(256) NOT NULL,
+	UNIQUE KEY `title` (`title`)
 );
