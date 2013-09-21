@@ -92,6 +92,13 @@ class Parser {
 	protected $_involvedData = array();
 	
 	/**
+	 * Involved parties' models
+	 *
+	 * @var array 
+	 */
+	protected $_involved;
+	
+	/**
 	 * Destroyed items' data
 	 *
 	 * @var array
@@ -290,7 +297,13 @@ class Parser {
 	public function getInvolvedParties() {
 		$this->parse();
 		
-		return $this->_involvedData;
+		if ($this->_involved === null) {
+			foreach ($this->_involvedData as $data) {
+				$this->_involved[] = new InvolvedPart($data);
+			}
+		}
+		
+		return $this->_involved;
 	}
 	
 	/**
