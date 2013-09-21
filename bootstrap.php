@@ -21,7 +21,8 @@ $loader->registerNamespaces([
 
 $loader->registerDirs([
 	APP_PATH . DIRECTORY_SEPARATOR . 'controllers',
-	APP_PATH . DIRECTORY_SEPARATOR . 'models'
+	APP_PATH . DIRECTORY_SEPARATOR . 'models',
+	APP_PATH . DIRECTORY_SEPARATOR . 'services'
 ]);
 
 $loader->register();
