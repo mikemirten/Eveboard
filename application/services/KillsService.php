@@ -1,6 +1,7 @@
 <?php
 
 use Eveboard\Killmail\Parser;
+use Phalcon\Mvc\Model\Transaction\Manager;
 
 class KillsService {
 	
@@ -101,11 +102,32 @@ class KillsService {
 		
 		if (! empty($involvedParties)) {
 			$involvedModels = $this->processInvolved($involvedParties);
-			
-			var_dump($involvedModels); die;
 		}
 		
-//		$kill->save();
+		// Saving the data
+		$transactionManager = new Manager();
+		$transaction = $transactionManager->get();
+		
+		$kill->setTransaction($transaction);
+		
+		if (! $kill->save()) {
+			$transaction->rollback();
+			throw new RuntimeException(implode(' ;', $kill->getMessages()));
+		}
+		
+		if (isset($involvedModels)) {
+			foreach ($involvedModels as $involvedModel) {
+				$involvedModel->setTransaction($transaction);
+				$involvedModel->kill_id = $kill->kill_id;
+				
+				if (! $involvedModel->save()) {
+					$transaction->rollback();
+					throw new RuntimeException(implode(' ;', $involvedModel->getMessages()));
+				}
+			}
+		}
+		
+		$transaction->commit();
 	}
 	
 	/**
@@ -124,10 +146,7 @@ class KillsService {
 			
 			$involved->security    = $part->getSecurity();
 			$involved->damage_done = $part->getDamageDone();
-			
-			if ($part->isFinalBlow()) {
-				$involved->final_blow = 1;
-			}
+			$involved->final_blow  = (int) $part->isFinalBlow();
 			
 			// Resolve involved
 			$involvedName = $part->getPartName();
