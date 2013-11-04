@@ -79,7 +79,7 @@ class Client {
 			$getParams[self::PARAM_KEY_CODE] = $this->_keyCode;
 		}
 		
-		if ($params !== null) {
+		if (! empty($params)) {
 			$getParams += $params;
 		}
 		
@@ -102,7 +102,7 @@ class Client {
 		restore_error_handler();
 		
 		if ($response === false || $errorMsg !== null) {
-			throw new RequestError('Unable to perform request: ' . $errorMsg);
+			throw new RequestError('Unable to perform request: ' . $errorMsg . '; Url: ' . $url);
 		}
 		
 		$document = new SimpleXMLElement($response);

@@ -1,27 +1,32 @@
 CREATE TABLE `kills` (
-	`kill_id`      int unsigned NOT NULL PRIMARY KEY,
-	`character_id` int unsigned NOT NULL,
-	`corp_id`      int unsigned NOT NULL,
-	`alliance_id`  int unsigned NOT NULL,
-	`faction_id`   int unsigned NOT NULL,
+	`kill_id`      int unsigned NOT NULL PRIMARY KEY auto_increment,
+	`player_id`    int unsigned,
+	`alliance_id`  int unsigned,
+	`corp_id`      int unsigned,
+	`faction_id`   int unsigned,
 	`item_id`      int unsigned NOT NULL COMMENT 'Destroyed item',
-	`system_id`    int unsigned NOT NULL,
-	`moon_id`      int unsigned NOT NULL,
+	`system_id`    int unsigned,
+	`moon_id`      int unsigned,
 	`committed`    timestamp NOT NULL,
-	`damage_taken` bigint unsigned
+	`security`     int signed,
+	`damage_taken` bigint unsigned,
+	`mail_source`  text NOT NULL COMMENT 'GZipped',
+	`kill_hash`    varchar(32) NOT NULL,
+	UNIQUE KEY `hash` (`kill_hash`)
 );
 
 CREATE TABLE `involved` (
-	`part_id`      int unsigned NOT NULL PRIMARY KEY auto_increment,
-	`kill_id`      int unsigned NOT NULL,
-	`character_id` int unsigned NOT NULL,
-	`alliance_id`  int unsigned NOT NULL,
-	`corp_id`      int unsigned NOT NULL,
-	`faction_id`   int unsigned NOT NULL,
-	`ship_id`      int unsigned NOT NULL,
-	`weapon_id`    int unsigned NOT NULL,
-	`damage_done`  bigint NOT NULL DEFAULT 0,
-	`final_blow`   boolean NOT NULL DEFAULT false
+	`kill_id`     int unsigned NOT NULL,
+	`player_id`   int unsigned NOT NULL,
+	`alliance_id` int unsigned,
+	`corp_id`     int unsigned,
+	`faction_id`  int unsigned,
+	`ship_id`     int unsigned,
+	`weapon_id`   int unsigned,
+	`security`    int signed,
+	`damage_done` bigint NOT NULL DEFAULT 0,
+	`final_blow`  boolean NOT NULL DEFAULT false,
+	PRIMARY KEY (`kill_id`, `player_id`)
 );
 
 CREATE TABLE `destroyed_items` (
