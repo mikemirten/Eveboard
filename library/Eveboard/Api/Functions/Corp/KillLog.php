@@ -6,8 +6,6 @@ use SimpleXMLElement, stdClass;
 
 class KillLog extends FunctionAbstract {
 	
-	protected $includeNames = false;
-	
 	protected function processData(SimpleXMLElement $data) {
 		$kills = [];
 		
@@ -31,13 +29,10 @@ class KillLog extends FunctionAbstract {
 			$killData->factionID       = (int)    $victimAttrs->factionID;
 			$killData->damageTaken     = (int)    $victimAttrs->damageTaken;
 			$killData->shipTypeID      = (int)    $victimAttrs->shipTypeID;
-			
-			if ($this->includeNames) {
-				$killData->characterName   = (string) $victimAttrs->characterName;
-				$killData->corporationName = (string) $victimAttrs->corporationName;
-				$killData->allianceName    = (string) $victimAttrs->allianceName;
-				$killData->factionName     = (string) $victimAttrs->factionName;
-			}
+			$killData->characterName   = (string) $victimAttrs->characterName;
+			$killData->corporationName = (string) $victimAttrs->corporationName;
+			$killData->allianceName    = (string) $victimAttrs->allianceName;
+			$killData->factionName     = (string) $victimAttrs->factionName;
 			
 			$parts = [];
 			
@@ -54,13 +49,10 @@ class KillLog extends FunctionAbstract {
 				$partData->finalBlow       = (int)    $partAttrs->finalBlow;
 				$partData->weaponTypeID    = (int)    $partAttrs->weaponTypeID;
 				$partData->shipTypeID      = (int)    $partAttrs->shipTypeID;
-				
-				if ($this->includeNames) {
-					$partData->characterName   = (string) $partAttrs->characterName;
-					$partData->corporationName = (string) $partAttrs->corporationName;
-					$partData->allianceName    = (string) $partAttrs->allianceName;
-					$partData->factionName     = (string) $partAttrs->factionName;
-				}
+				$partData->characterName   = (string) $partAttrs->characterName;
+				$partData->corporationName = (string) $partAttrs->corporationName;
+				$partData->allianceName    = (string) $partAttrs->allianceName;
+				$partData->factionName     = (string) $partAttrs->factionName;
 				
 				$parts[] = $partData;
 			}
