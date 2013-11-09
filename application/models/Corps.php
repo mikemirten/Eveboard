@@ -4,12 +4,8 @@ use Phalcon\Mvc\Model;
 
 class Corps extends Model {
 	
-	static public function findByTitle($title) {
-		return self::query()
-			->where('title = :title:')
-			->bind(array('title' => $title))
-			->execute()
-			->getFirst();
+	static public function getCorpById($id) {
+		return self::find(['corp_id in(' . implode(',', (array) $id) . ')']);
 	}
 	
 }

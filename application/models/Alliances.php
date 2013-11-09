@@ -4,12 +4,8 @@ use Phalcon\Mvc\Model;
 
 class Alliances extends Model {
 	
-	static public function findByTitle($title) {
-		return self::query()
-			->where('title = :title:')
-			->bind(array('title' => $title))
-			->execute()
-			->getFirst();
+	static public function getPAlianceById($id) {
+		return self::find(['alliance_id in(' . implode(',', (array) $id) . ')']);
 	}
 	
 }

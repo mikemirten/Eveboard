@@ -32,24 +32,21 @@ CREATE TABLE `destroyed_items` (
 );
 
 CREATE TABLE `players` (
-	`player_id`   int unsigned NOT NULL PRIMARY KEY auto_increment,
-	`corp_id`     int unsigned,
-	`name` varchar(256) NOT NULL,
-	UNIQUE KEY `name` (`name`)
+	`player_id` int unsigned NOT NULL PRIMARY KEY,
+	`corp_id`   int unsigned,
+	`name`      varchar(256) NOT NULL
 );
 
 CREATE TABLE `alliances` (
-	`alliance_id` int unsigned NOT NULL PRIMARY KEY auto_increment,
-	`title`       varchar(256) NOT NULL,
-	UNIQUE KEY `name` (`title`)
+	`alliance_id` int unsigned NOT NULL PRIMARY KEY,
+	`title`       varchar(256) NOT NULL
 );
 
 CREATE TABLE `corps` (
-	`corp_id`     int unsigned NOT NULL PRIMARY KEY auto_increment,
+	`corp_id`     int unsigned NOT NULL PRIMARY KEY,
 	`alliance_id` int unsigned,
 	`title`       varchar(256) NOT NULL,
-	KEY `alliance` (`alliance_id`),
-	UNIQUE KEY `name` (`title`)
+	KEY `alliance` (`alliance_id`)
 );
 
 CREATE TABLE `systems` (
