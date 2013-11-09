@@ -1,7 +1,27 @@
-<table>
-	<? foreach ($kills as $kill): ?>
-	<tr>
-		<td><?= $kill->committed ?></td>
-	</tr>
-	<? endforeach ?>
+<h1 class="title">The&nbsp;xDEATHx&nbsp;Squadron</h1>
+<table class="killtable">
+	<colgroup>
+		<col width="25%">
+		<col width="25%">
+		<col width="25%">
+		<col width="25%">
+	</colgroup>
+	<thead>
+		<tr>
+			<th>Date / Time</th>
+			<th>Victim</th>
+			<th>Corporation</th>
+			<th>Alliance</th>
+		</tr>
+	</thead>
+	<tbody>
+		<? foreach ($kills as $kill): ?>
+		<tr>
+			<td><?= $kill->committed ?></td>
+			<td><?= $kill->character_name ?></td>
+			<td><?= $kill->corp_title ?></td>
+			<td><?= $kill->alliance_title ?></td>
+		</tr>
+		<? endforeach ?>
+	</tbody>
 </table>
