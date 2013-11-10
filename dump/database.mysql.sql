@@ -31,6 +31,11 @@ CREATE TABLE `destroyed_items` (
 	PRIMARY KEY (`kill_id`, `item_id`)
 );
 
+CREATE TABLE `items` (
+	`item_id` int unsigned NOT NULL PRIMARY KEY,
+	`title`   varchar(256) NOT NULL
+);
+
 CREATE TABLE `players` (
 	`player_id` int unsigned NOT NULL PRIMARY KEY,
 	`corp_id`   int unsigned,
@@ -50,20 +55,12 @@ CREATE TABLE `corps` (
 );
 
 CREATE TABLE `systems` (
-	`system_id` int unsigned NOT NULL PRIMARY KEY auto_increment,
-	`title`     varchar(256) NOT NULL,
-	UNIQUE KEY `name` (`title`)
+	`system_id` int unsigned NOT NULL PRIMARY KEY,
+	`title`     varchar(256) NOT NULL
 );
 
 CREATE TABLE `moons` (
-	`moon_id`   int unsigned NOT NULL PRIMARY KEY auto_increment,
+	`moon_id`   int unsigned NOT NULL PRIMARY KEY,
 	`system_id` int unsigned NOT NULL,
-	`title`     varchar(256) NOT NULL,
-	UNIQUE KEY `system_moon` (`system_id`, `title`)
-);
-
-CREATE TABLE `items` (
-	`item_id` int unsigned NOT NULL PRIMARY KEY auto_increment,
-	`title`   varchar(256) NOT NULL,
-	UNIQUE KEY `title` (`title`)
+	`title`     varchar(256) NOT NULL
 );

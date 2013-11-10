@@ -4,6 +4,10 @@ use Phalcon\Mvc\Model\Transaction\Manager;
 
 class KillsService {
 	
+	protected $transaction;
+	
+	protected $alliancesIds, $corpsIds, $playersIds;
+	
 	public function importKills() {
 		$client = new Eveboard\Api\ClientTest();
 		$client->setResponseXml(file_get_contents(TMP_PATH . DIRECTORY_SEPARATOR . 'KillLog.xml'));
@@ -18,6 +22,7 @@ class KillsService {
 		$playersIds   = [];
 		$corpsIds     = [];
 		$alliancesIds = [];
+		$itemsIds     = [];
 		
 		foreach ($kills as $kill) {
 			if (! isset($playersIds[$kill->characterID])) {
@@ -32,6 +37,10 @@ class KillsService {
 				$alliancesIds[$kill->allianceID] = true;
 			}
 			
+			if (! isset($itemsIds[$kill->shipTypeID])) {
+				$itemsIds[$kill->shipTypeID] = true;
+			}
+			
 			foreach ($kill->parts as $part) {
 				if (! isset($playersIds[$part->characterID])) {
 					$playersIds[$part->characterID] = true;
@@ -44,41 +53,59 @@ class KillsService {
 				if (! isset($alliancesIds[$part->allianceID])) {
 					$alliancesIds[$part->allianceID] = true;
 				}
+				
+				if (! isset($itemsIds[$kill->shipTypeID])) {
+					$itemsIds[$kill->shipTypeID] = true;
+				}
 			}
 		}
-		unset($playersIds[0], $corpsIds[0], $alliancesIds[0], $kill);
+		unset($playersIds[0], $corpsIds[0], $alliancesIds[0], $itemsIds[0], $kill);
 		
 		// Players data
-		$existedPlayersIds = [];
+		$this->playersIds = [];
 		
 		foreach (Players::getPlayerById(array_keys($playersIds)) as $player) {
-			$existedPlayersIds[(int) $player->player_id] = true;
+			$this->playersIds[(int) $player->player_id] = true;
 		}
 		unset($playersIds, $player);
 		
 		// Corporations data
-		$existedCorpsIds = [];
+		$this->corpsIds = [];
 		
 		foreach (Corps::getCorpById(array_keys($corpsIds)) as $corp) {
-			$existedCorpsIds[(int) $corp->corp_id] = true;
+			$this->corpsIds[(int) $corp->corp_id] = true;
 		}
 		unset($playersIds, $corp);
 		
 		// Alliances data
-		$existedAlliancesIds = [];
+		$this->alliancesIds = [];
 		
 		foreach (Alliances::getPAlianceById(array_keys($alliancesIds)) as $ally) {
-			$existedAlliancesIds[(int) $ally->alliance_id] = true;
+			$this->alliancesIds[(int) $ally->alliance_id] = true;
 		}
 		unset($playersIds, $ally);
 		
+		// ItemsData
+		$existsItemsIds = [];
+		
+		foreach (Items::getItemsById(array_keys($itemsIds)) as $item) {
+			$existsItemsIds[(int) $item->item_id] = true;
+		}
+		
+		$needItemsIds = array_keys(array_diff_key($itemsIds, $existsItemsIds));
+		unset($existsItemsIds, $itemsIds, $item);
+		
 		$transactionManager = new Manager();
-		$transaction        = $transactionManager->get();
+		$this->transaction  = $transactionManager->get();
 		
 		foreach ($kills as $killData) {
+			$this->saveAllianceData($killData->allianceID, $killData->allianceName);
+			$this->saveCorpData($killData->corporationID, $killData->allianceID, $killData->corporationName);
+			$this->savePlayerData($killData->characterID, $killData->corporationID, $killData->characterName);
+			
 			// Save kill
 			$kill = new Kills();
-			$kill->setTransaction($transaction);
+			$kill->setTransaction($this->transaction);
 			
 			$kill->kill_id      = $killData->killID;
 			$kill->character_id = $killData->characterID;
@@ -92,68 +119,19 @@ class KillsService {
 			$kill->damage_taken = $killData->damageTaken;
 			
 			if (! $kill->save()) {
-				$transaction->rollback();
+				$this->transaction->rollback();
 				throw new RuntimeException(implode(' ;', $kill->getMessages()));
 			}
 			
 			// Save involved parties
 			foreach ($killData->parts as $partData) {
-				// Save alliance's data
-				if ($partData->allianceID !== 0
-				&& ! isset($existedAlliancesIds[$partData->allianceID])) {
-					$existedAlliancesIds[$partData->allianceID] = true;
-					
-					$ally = new Alliances();
-					$ally->setTransaction($transaction);
-
-					$ally->alliance_id = $partData->allianceID;
-					$ally->title       = $partData->allianceName;
-
-					if (! $ally->save()) {
-						$transaction->rollback();
-						throw new RuntimeException(implode(' ;', $ally->getMessages()));
-					}
-				}
-				
-				// Save corporation's data
-				if ($partData->corporationID !== 0
-				&& ! isset($existedCorpsIds[$partData->corporationID])) {
-					$existedCorpsIds[$partData->corporationID] = true;
-					
-					$corp = new Corps();
-					$corp->setTransaction($transaction);
-
-					$corp->corp_id     = $partData->corporationID;
-					$corp->title       = $partData->corporationName;
-					$corp->alliance_id = $partData->allianceID;
-
-					if (! $corp->save()) {
-						$transaction->rollback();
-						throw new RuntimeException(implode(' ;', $corp->getMessages()));
-					}
-				}
-				
-				// Save player's data
-				if ($partData->characterID !== 0
-				&& ! isset($existedPlayersIds[$partData->characterID])) {
-					$existedPlayersIds[$partData->characterID] = true;
-					
-					$player = new Players();
-					$player->setTransaction($transaction);
-
-					$player->player_id = $partData->characterID;
-					$player->name      = $partData->characterName;
-					$player->corp_id   = $partData->corporationID;
-
-					if (! $player->save()) {
-						$transaction->rollback();
-						throw new RuntimeException(implode(' ;', $player->getMessages()));
-					}
-				}
+				$this->saveAllianceData($partData->allianceID, $partData->allianceName);
+				$this->saveCorpData($partData->corporationID, $partData->allianceID, $partData->corporationName);
+				$this->savePlayerData($partData->characterID, $partData->corporationID, $partData->characterName);
 				
 				// Save involved data
 				$involved = new Involved();
-				$involved->setTransaction($transaction);
+				$involved->setTransaction($this->transaction);
 				
 				$involved->kill_id      = $killData->killID;
 				$involved->character_id = $partData->characterID;
@@ -166,13 +144,95 @@ class KillsService {
 				$involved->final_blow   = $partData->finalBlow;
 				
 				if (! $involved->save()) {
-					$transaction->rollback();
+					$this->transaction->rollback();
 					throw new RuntimeException(implode(' ;', $involved->getMessages()));
 				}
 			}
 		}
 		
-		$transaction->commit();
+		if (! empty($needItemsIds)) {
+			$chunks = array_chunk($needItemsIds, 100);
+			
+			foreach ($chunks as $chunk) {
+				$client->setResponseXml(file_get_contents(TMP_PATH . DIRECTORY_SEPARATOR . 'Items.xml'));
+				$items = $client->Eve->TypeName(implode(',', $chunk));
+				
+				foreach ($items as $itemId => $itemTitle) {
+					$item = new Items();
+					$item->setTransaction($this->transaction);
+
+					$item->item_id = $itemId;
+					$item->title   = $itemTitle;
+					
+					if (! $item->save()) {
+						$this->transaction->rollback();
+						throw new RuntimeException(implode(' ;', $item->getMessages()));
+					}
+				}
+			}
+			
+		}
+		
+		$this->transaction->commit();
+	}
+	
+	protected function saveAllianceData($allyId, $allyTitle) {
+		if ($allyId === 0 || isset($this->alliancesIds[$allyId])) {
+			return;
+		}
+		
+		$this->alliancesIds[$allyId] = true;
+
+		$ally = new Alliances();
+		$ally->setTransaction($this->transaction);
+
+		$ally->alliance_id = $allyId;
+		$ally->title       = $allyTitle;
+
+		if (! $ally->save()) {
+			$this->transaction->rollback();
+			throw new RuntimeException(implode(' ;', $ally->getMessages()));
+		}
+	}
+	
+	protected function saveCorpData($corpId, $allyId, $corpTitle) {
+		if ($corpId === 0 || isset($this->corpsIds[$corpId])) {
+			return;
+		}
+		
+		$this->corpsIds[$corpId] = true;
+
+		$corp = new Corps();
+		$corp->setTransaction($this->transaction);
+
+		$corp->corp_id     = $corpId;
+		$corp->title       = $corpTitle;
+		$corp->alliance_id = $allyId;
+
+		if (! $corp->save()) {
+			$this->transaction->rollback();
+			throw new RuntimeException(implode(' ;', $corp->getMessages()));
+		}
+	}
+	
+	protected function savePlayerData($playerId, $corpId, $playerName) {
+		if ($playerId === 0 || isset($this->playersIds[$playerId])) {
+			return;
+		}
+		
+		$this->playersIds[$playerId] = true;
+
+		$player = new Players();
+		$player->setTransaction($this->transaction);
+
+		$player->player_id = $playerId;
+		$player->name      = $playerName;
+		$player->corp_id   = $corpId;
+
+		if (! $player->save()) {
+			$this->transaction->rollback();
+			throw new RuntimeException(implode(' ;', $player->getMessages()));
+		}	
 	}
 	
 }
