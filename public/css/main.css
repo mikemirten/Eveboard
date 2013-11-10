@@ -48,10 +48,23 @@ body {
 	padding:    0.1em 0.5em;
 }
 
+.killtable td a {
+	color:           #fff;
+	text-decoration: none;
+}
+
+.killtable td a:hover {
+	text-decoration: underline;
+}
+
 .killtable tbody tr:nth-child(even) td {
 	background: rgba(50, 50, 50, 0.4);
 }
 
 .killtable tbody tr:hover td {
 	background: rgba(100, 100, 100, 0.8);
+}
+
+.victim-corp {
+	color: #c97;
 }

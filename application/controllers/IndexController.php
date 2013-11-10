@@ -5,12 +5,13 @@ use Phalcon\Mvc\Model\Resultset;
 class IndexController extends Controller {
 	
 	public function indexAction() {
-		$kills = Kills::getLastKills()->toArray();
+		$kills = Kills::getLastKills(1411711376)->toArray();
 		
 		// Gathering ids
 		$playersIds   = [];
 		$corpsIds     = [];
 		$alliancesIds = [];
+		$itemsIds     = [];
 		
 		foreach ($kills as &$kill) {
 			$kill = (object) $kill;
@@ -18,44 +19,65 @@ class IndexController extends Controller {
 			$playersIds[]   = $kill->character_id;
 			$corpsIds[]     = $kill->corp_id;
 			$alliancesIds[] = $kill->alliance_id;
+			$itemsIds[]     = $kill->item_id;
 		}
 		unset($kill);
 		
 		// Players' data
-		$playersRaw = Players::getPlayerById(array_unique($playersIds));
-		$playersRaw->setHydrateMode(Resultset::HYDRATE_OBJECTS);
-		unset($playersIds);
+		if (! empty($playersIds)) {
+			$playersRaw = Players::getPlayerById(array_unique($playersIds));
+			$playersRaw->setHydrateMode(Resultset::HYDRATE_OBJECTS);
+			unset($playersIds);
 		
-		$players = [];
-		
-		foreach ($playersRaw as $player) {
-			$players[$player->player_id] = $player;
+			$players = [];
+
+			foreach ($playersRaw as $player) {
+				$players[$player->player_id] = $player;
+			}
+			unset($playersRaw);
 		}
-		unset($playersRaw);
 		
 		// Corporations' data
-		$corpsRaw = Corps::getCorpById(array_unique($corpsIds));
-		$corpsRaw->setHydrateMode(Resultset::HYDRATE_OBJECTS);
-		unset($corpsIds);
-		
-		$corps = [];
-		
-		foreach ($corpsRaw as $corp) {
-			$corps[$corp->corp_id] = $corp;
+		if (! empty($corpsIds)) {
+			$corpsRaw = Corps::getCorpById(array_unique($corpsIds));
+			$corpsRaw->setHydrateMode(Resultset::HYDRATE_OBJECTS);
+			unset($corpsIds);
+
+			$corps = [];
+
+			foreach ($corpsRaw as $corp) {
+				$corps[$corp->corp_id] = $corp;
+			}
+			unset($corpsRaw);
 		}
-		unset($corpsRaw);
 		
 		// Alliances' data
-		$alliancesRaw = Alliances::getPAlianceById(array_unique($alliancesIds));
-		$alliancesRaw->setHydrateMode(Resultset::HYDRATE_OBJECTS);
-		unset($alliancesIds);
-		
-		$alliances = [];
-		
-		foreach ($alliancesRaw as $ally) {
-			$alliances[$ally->alliance_id] = $ally;
+		if (! empty($alliancesIds)) {
+			$alliancesRaw = Alliances::getPAlianceById(array_unique($alliancesIds));
+			$alliancesRaw->setHydrateMode(Resultset::HYDRATE_OBJECTS);
+			unset($alliancesIds);
+
+			$alliances = [];
+
+			foreach ($alliancesRaw as $ally) {
+				$alliances[$ally->alliance_id] = $ally;
+			}
+			unset($alliancesRaw);
 		}
-		unset($alliancesRaw);
+		
+		// Items' data
+		if (! empty($itemsIds)) {
+			$itemsRaw = Items::getItemsById(array_unique($itemsIds));
+			$itemsRaw->setHydrateMode(Resultset::HYDRATE_OBJECTS);
+			unset($itemsIds);
+
+			$items = [];
+
+			foreach ($itemsRaw as $item) {
+				$items[$item->item_id] = $item;
+			}
+			unset($itemsRaw);
+		}
 		
 		// Gathered data into kills
 		foreach ($kills as $kill) {
@@ -76,6 +98,12 @@ class IndexController extends Controller {
 				$kill->alliance_title = $alliances[$kill->alliance_id]->title;
 			} else {
 				$kill->alliance_title = 'unknown';
+			}
+			// Items
+			if (isset($items[$kill->item_id])) {
+				$kill->item_title = $items[$kill->item_id]->title;
+			} else {
+				$kill->item_title = 'unknown';
 			}
 		}
 		

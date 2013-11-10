@@ -1,15 +1,21 @@
 <h1 class="title">The&nbsp;xDEATHx&nbsp;Squadron</h1>
+
+<? if (empty($kills)): ?>
+<h2 class="title">No kills committed</h2>
+<? else: ?>
 <table class="killtable">
 	<colgroup>
-		<col width="25%">
-		<col width="25%">
-		<col width="25%">
-		<col width="25%">
+		<col width="20%">
+		<col width="20%">
+		<col width="20%">
+		<col width="20%">
+		<col width="20%">
 	</colgroup>
 	<thead>
 		<tr>
 			<th>Date / Time</th>
 			<th>Victim</th>
+			<th>Property</th>
 			<th>Corporation</th>
 			<th>Alliance</th>
 		</tr>
@@ -18,10 +24,28 @@
 		<? foreach ($kills as $kill): ?>
 		<tr>
 			<td><?= $kill->committed ?></td>
-			<td><?= $kill->character_name ?></td>
-			<td><?= $kill->corp_title ?></td>
-			<td><?= $kill->alliance_title ?></td>
+			<td>
+				<? if ($kill->character_id != 0): ?>
+				<a href="#<?= $kill->character_id ?>"><?= $kill->character_name ?></a>
+				<? else: ?>
+				<span class="victim-corp">Corporation property</span>
+				<? endif ?>
+			</td>
+			<td>
+				<a href="#<?= $kill->item_id ?>"><?= $kill->item_title ?></a>
+			</td>
+			<td>
+				<? if ($kill->corp_id != 0): ?>
+				<a href="#<?= $kill->corp_id ?>"><?= $kill->corp_title ?></a>
+				<? endif ?>
+			</td>
+			<td>
+				<? if ($kill->alliance_id != 0): ?>
+				<a href="#<?= $kill->alliance_id ?>"><?= $kill->alliance_title ?></a>
+				<? endif ?>
+			</td>
 		</tr>
 		<? endforeach ?>
 	</tbody>
 </table>
+<? endif ?>
