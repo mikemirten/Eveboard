@@ -8,6 +8,7 @@ class IndexController extends Controller {
 		$kills = Kills::getLastKills(1411711376)->toArray();
 		
 		// Gathering ids
+		$killIds      = [];
 		$playersIds   = [];
 		$corpsIds     = [];
 		$alliancesIds = [];
@@ -16,12 +17,18 @@ class IndexController extends Controller {
 		foreach ($kills as &$kill) {
 			$kill = (object) $kill;
 			
+			$killIds[]      = $kill->kill_id;
 			$playersIds[]   = $kill->character_id;
 			$corpsIds[]     = $kill->corp_id;
 			$alliancesIds[] = $kill->alliance_id;
 			$itemsIds[]     = $kill->item_id;
 		}
 		unset($kill);
+		
+		// Involved count
+		if (! empty($killIds)) {
+			$involvedNum = Involved::getInvolvedByKillsIds($killIds);
+		}
 		
 		// Players' data
 		if (! empty($playersIds)) {
@@ -81,6 +88,12 @@ class IndexController extends Controller {
 		
 		// Gathered data into kills
 		foreach ($kills as $kill) {
+			// Involved number
+			if (isset($involvedNum[$kill->kill_id])) {
+				$kill->involved_number = $involvedNum[$kill->kill_id];
+			} else {
+				$kill->involved_number = 0;
+			}
 			// Players
 			if (isset($players[$kill->character_id])) {
 				$kill->character_name = $players[$kill->character_id]->name;

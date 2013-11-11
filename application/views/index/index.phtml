@@ -5,11 +5,12 @@
 <? else: ?>
 <table class="killtable">
 	<colgroup>
+		<col width="15%">
 		<col width="20%">
 		<col width="20%">
 		<col width="20%">
 		<col width="20%">
-		<col width="20%">
+		<col width="5%">
 	</colgroup>
 	<thead>
 		<tr>
@@ -18,6 +19,7 @@
 			<th>Property</th>
 			<th>Corporation</th>
 			<th>Alliance</th>
+			<th>Involved</th>
 		</tr>
 	</thead>
 	<tbody>
@@ -44,6 +46,7 @@
 				<a href="#<?= $kill->alliance_id ?>"><?= $kill->alliance_title ?></a>
 				<? endif ?>
 			</td>
+			<td><?= $kill->involved_number ?></td>
 		</tr>
 		<? endforeach ?>
 	</tbody>
