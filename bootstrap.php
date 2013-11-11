@@ -14,6 +14,8 @@ define('LIB_PATH', ROOT_PATH . DIRECTORY_SEPARATOR . 'library');
 define('APP_PATH', ROOT_PATH . DIRECTORY_SEPARATOR . 'application');
 define('CONF_PATH', APP_PATH . DIRECTORY_SEPARATOR . 'configs');
 
+date_default_timezone_set('Europe/Moscow');
+
 $loader = new Loader();
 
 $loader->registerNamespaces([
