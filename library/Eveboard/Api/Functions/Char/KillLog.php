@@ -2,6 +2,7 @@
 namespace Eveboard\Api\Functions\Char;
 
 use Eveboard\Api\Functions\FunctionAbstract;
+use SimpleXMLElement;
 
 class KillLog extends FunctionAbstract {
 	
@@ -12,8 +13,8 @@ class KillLog extends FunctionAbstract {
 		];
 	}
 	
-	protected function processData(\SimpleXMLElement $data) {
-		;
+	protected function processData(SimpleXMLElement $data) {
+		return $data;
 	}
 	
 }
