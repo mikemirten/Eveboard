@@ -6,6 +6,10 @@ use SimpleXMLElement, stdClass;
 
 class KillLog extends FunctionAbstract {
 	
+	protected function getParamsDefinition() {
+		return ['beforeKillID' => false];
+	}
+	
 	protected function processData(SimpleXMLElement $data) {
 		$kills = [];
 		
@@ -35,29 +39,50 @@ class KillLog extends FunctionAbstract {
 			$killData->factionName     = (string) $victimAttrs->factionName;
 			
 			$parts = [];
+			$items = [];
 			
-			foreach ($kill->rowset->row as $part) {
-				$partData  = new stdClass();
-				$partAttrs = $part->attributes();
+			foreach ($kill->rowset as $rowset) {
+				$rowsetName = (string) $rowset->attributes()->name;
 				
-				$partData->characterID     = (int)    $partAttrs->characterID;
-				$partData->corporationID   = (int)    $partAttrs->corporationID;
-				$partData->allianceID      = (int)    $partAttrs->allianceID;
-				$partData->factionID       = (int)    $partAttrs->factionID;
-				$partData->securityStatus  = (float)  $partAttrs->securityStatus;
-				$partData->damageDone      = (int)    $partAttrs->damageDone;
-				$partData->finalBlow       = (int)    $partAttrs->finalBlow;
-				$partData->weaponTypeID    = (int)    $partAttrs->weaponTypeID;
-				$partData->shipTypeID      = (int)    $partAttrs->shipTypeID;
-				$partData->characterName   = (string) $partAttrs->characterName;
-				$partData->corporationName = (string) $partAttrs->corporationName;
-				$partData->allianceName    = (string) $partAttrs->allianceName;
-				$partData->factionName     = (string) $partAttrs->factionName;
-				
-				$parts[] = $partData;
+				if ($rowsetName === 'attackers') {
+					foreach ($rowset as $part) {
+						$partData  = new stdClass();
+						$partAttrs = $part->attributes();
+
+						$partData->characterID     = (int)    $partAttrs->characterID;
+						$partData->corporationID   = (int)    $partAttrs->corporationID;
+						$partData->allianceID      = (int)    $partAttrs->allianceID;
+						$partData->factionID       = (int)    $partAttrs->factionID;
+						$partData->securityStatus  = (float)  $partAttrs->securityStatus;
+						$partData->damageDone      = (int)    $partAttrs->damageDone;
+						$partData->finalBlow       = (int)    $partAttrs->finalBlow;
+						$partData->weaponTypeID    = (int)    $partAttrs->weaponTypeID;
+						$partData->shipTypeID      = (int)    $partAttrs->shipTypeID;
+						$partData->characterName   = (string) $partAttrs->characterName;
+						$partData->corporationName = (string) $partAttrs->corporationName;
+						$partData->allianceName    = (string) $partAttrs->allianceName;
+						$partData->factionName     = (string) $partAttrs->factionName;
+
+						$parts[] = $partData;
+					}
+
+					$killData->parts = $parts;
+				} else if ($rowsetName === 'items') {
+					foreach ($rowset as $item) {
+						$itemData  = new stdClass();
+						$itemAttrs = $item->attributes();
+						
+						$itemData->typeID       = (int) $itemAttrs->typeID;
+						$itemData->qtyDropped   = (int) $itemAttrs->qtyDropped;
+						$itemData->qtyDestroyed = (int) $itemAttrs->qtyDestroyed;
+						$itemData->flag         = (int) $itemAttrs->flag;
+						
+						$items[] = $itemData;
+					}
+					
+					$killData->items = $items;
+				}
 			}
-			
-			$killData->parts = $parts;
 			
 			$kills[$killData->killID] = $killData;
 		}
