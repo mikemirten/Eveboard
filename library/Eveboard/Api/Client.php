@@ -2,12 +2,14 @@
 namespace Eveboard\Api;
 
 use Eveboard\Api\Exceptions\RequestError;
+use Eveboard\Api\Exceptions\ApiError;
 use SimpleXMLElement;
 
 /**
  * Eve-Online API's client
  * 
  * @property \Eveboard\Api\Functions\Account $account Account information
+ * @property \Eveboard\Api\Functions\Char    $char    Character information
  * @property \Eveboard\Api\Functions\Corp    $corp    Corporation information
  */
 class Client {
@@ -65,6 +67,7 @@ class Client {
 	 * @param  array  $params
 	 * @return SimpleXMLElement
 	 * @throws RequestError
+	 * @throws ApiError
 	 */
 	public function request($section, $function, array $params = null) {
 		$url = sprintf(self::API_TEMPLATE, strtolower($section), ucfirst($function));
@@ -87,28 +90,32 @@ class Client {
 			$url .= '?' . http_build_query($getParams);
 		}
 		
-		$errorMsg;
+		$curl = curl_init($url);
 		
-		set_error_handler(function() use(&$errorMsg) {
-			$args = func_get_args();
-			
-			if (isset($args[4]['http_response_header'][0])) {
-				$errorMsg = $args[4]['http_response_header'][0];
-			}
-		});
+		curl_setopt($curl, CURLOPT_USERAGENT, 'Eveboard');
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 		
-		$response = file_get_contents($url);
+		$response = curl_exec($curl);
+		$errorNm  = curl_errno($curl);
+		$errorStr = curl_error($curl);
 		
-		restore_error_handler();
+		curl_close($curl);
 		
-		if ($response === false || $errorMsg !== null) {
-			throw new RequestError('Unable to perform request: ' . $errorMsg . '; Url: ' . $url);
+		if ($response === false) {
+			throw new RequestError("Unable to perform the request: $errorStr; Url: $url", $errorNm);
 		}
 		
 		$document = new SimpleXMLElement($response);
 		
+		if (isset($document->error)) {
+			$errAttrs = $document->error->attributes();
+			$errorNm  = isset($errAttrs->code) ? (int) $errAttrs->code : 0;
+			
+			throw new ApiError("Invalid request: $document->error; Url: $url", $errorNm);
+		}
+		
 		if (! isset ($document->result)) {
-			throw new RequestError('Have no result');
+			throw new RequestError("Have no result; Url: $url");
 		}
 		
 		return $document->result;
