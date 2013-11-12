@@ -1,6 +1,7 @@
 <?php
 
 use Phalcon\Mvc\Model\Transaction\Manager;
+use Eveboard\Api\Exceptions\ApiError;
 
 class KillsService {
 	
@@ -12,7 +13,16 @@ class KillsService {
 		$client = new Eveboard\Api\ClientTest();
 		$client->setResponseXml(file_get_contents(TMP_PATH . DIRECTORY_SEPARATOR . 'KillLog.xml'));
 		
-		$kills = $client->corp->killLog();
+		try {
+			$kills = $client->corp->killLog();
+		} catch (ApiError $exception) {
+			// Kill log exhausted
+			if ($exception->getCode() === 119) {
+				return;
+			}
+			
+			throw $exception;
+		}
 		
 		if (empty($kills)) {
 			return;
@@ -54,8 +64,14 @@ class KillsService {
 					$alliancesIds[$part->allianceID] = true;
 				}
 				
-				if (! isset($itemsIds[$kill->shipTypeID])) {
-					$itemsIds[$kill->shipTypeID] = true;
+				if (! isset($itemsIds[$part->shipTypeID])) {
+					$itemsIds[$part->shipTypeID] = true;
+				}
+			}
+			
+			foreach ($kill->items as $item) {
+				if (! isset($itemsIds[$item->typeID])) {
+					$itemsIds[$item->typeID] = true;
 				}
 			}
 		}
