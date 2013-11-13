@@ -9,7 +9,8 @@ class KillboardController extends Controller {
 	}
 	
 	public function killsAction() {
-		$kills = Kills::getLastKills(1411711376)->toArray();
+		$allyId = $this->config->alliance->id;
+		$kills  = Kills::getLastKills($allyId)->toArray();
 		
 		// Gathering ids
 		$killIds      = [];
