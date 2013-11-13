@@ -3,7 +3,7 @@ namespace Eveboard\Api;
 
 use Eveboard\Api\Exceptions\RequestError;
 use Eveboard\Api\Exceptions\ApiError;
-use SimpleXMLElement, RuntimeException;
+use SimpleXMLElement, RuntimeException, Closure;
 
 /**
  * Eve-Online API's client
@@ -34,6 +34,13 @@ class Client {
 	 * @var string
 	 */
 	protected $_keyCode;
+	
+	/**
+	 * On request success callback
+	 *
+	 * @var Closure
+	 */
+	protected $_onSuccessCallback;
 	
 	/**
 	 * Constructor
@@ -68,6 +75,16 @@ class Client {
 		$this->_keyCode = $code;
 		
 		return $this;
+	}
+	
+	/**
+	 * Set on response success callback
+	 * Will calls: callback($section, $function, $params, $response);
+	 * 
+	 * @param Closure $callback
+	 */
+	public function setOnSuccessCallback(Closure $callback) {
+		$this->_onSuccessCallback = $callback;
 	}
 	
 	/**
@@ -127,6 +144,10 @@ class Client {
 		
 		if (! isset ($document->result)) {
 			throw new RequestError("Have no result; Url: \"$url\"");
+		}
+		
+		if ($this->_onSuccessCallback !== null) {
+			$this->_onSuccessCallback->__invoke($section, $function, $params, $response);
 		}
 		
 		return $document->result;

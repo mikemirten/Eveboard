@@ -95,6 +95,12 @@ $di->set('eveApiClient', function() use($di) {
 	$client->setKeyId($config->keyId);
 	$client->setKeyCode($config->keyCode);
 	
+	$client->setOnSuccessCallback(function($section, $function, &$params, &$response) {
+		if ($section === 'corp' && $function === 'KillLog') {
+			file_put_contents(TMP_PATH . DIRECTORY_SEPARATOR . 'killog_' . date('Y-m-d_H:i:s') . '.xml', $response);
+		}
+	});
+	
 	return $client;
 }, true);
 
