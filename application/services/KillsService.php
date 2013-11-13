@@ -2,19 +2,28 @@
 
 use Phalcon\Mvc\Model\Transaction\Manager;
 use Eveboard\Api\Exceptions\ApiError;
+use Eveboard\Api\Client;
 
 class KillsService {
+	
+	/**
+	 * Eve API client
+	 *
+	 * @var Client 
+	 */
+	protected $client;
 	
 	protected $transaction;
 	
 	protected $alliancesIds, $corpsIds, $playersIds;
 	
+	public function __construct(Client $client) {
+		$this->client = $client;
+	}
+
 	public function importKills() {
-		$client = new Eveboard\Api\ClientTest();
-		$client->setResponseXml(file_get_contents(TMP_PATH . DIRECTORY_SEPARATOR . 'KillLog.xml'));
-		
 		try {
-			$kills = $client->corp->killLog();
+			$kills = $this->client->corp->killLog();
 		} catch (ApiError $exception) {
 			// Kill log exhausted
 			if ($exception->getCode() === 119) {
@@ -170,8 +179,7 @@ class KillsService {
 			$chunks = array_chunk($needItemsIds, 100);
 			
 			foreach ($chunks as $chunk) {
-				$client->setResponseXml(file_get_contents(TMP_PATH . DIRECTORY_SEPARATOR . 'Items.xml'));
-				$items = $client->Eve->TypeName(implode(',', $chunk));
+				$items = $this->client->Eve->TypeName(implode(',', $chunk));
 				
 				foreach ($items as $itemId => $itemTitle) {
 					$item = new Items();
