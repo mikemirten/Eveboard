@@ -22,8 +22,14 @@ class KillsService {
 	}
 
 	public function importKills() {
+		$lastKillId = Kills::getLastKillId();
+		
 		try {
-			$kills = $this->client->corp->killLog();
+			if ($lastKillId === null) {
+				$kills = $this->client->corp->killLog();
+			} else {
+				$kills = $this->client->corp->killLog($lastKillId);
+			}
 		} catch (ApiError $exception) {
 			// Kill log exhausted
 			if ($exception->getCode() === 119) {
@@ -44,6 +50,11 @@ class KillsService {
 		$itemsIds     = [];
 		
 		foreach ($kills as $kill) {
+			// Not a fresh kill
+			if ($kill->killID <= $lastKillId) {
+				return;
+			}
+			
 			if (! isset($playersIds[$kill->characterID])) {
 				$playersIds[$kill->characterID] = true;
 			}
@@ -144,8 +155,7 @@ class KillsService {
 			$kill->damage_taken = $killData->damageTaken;
 			
 			if (! $kill->save()) {
-				$this->transaction->rollback();
-				throw new RuntimeException(implode(' ;', $kill->getMessages()));
+				$this->transaction->rollback(implode(' ;', $kill->getMessages()));
 			}
 			
 			// Save involved parties
@@ -169,35 +179,53 @@ class KillsService {
 				$involved->final_blow   = $partData->finalBlow;
 				
 				if (! $involved->save()) {
-					$this->transaction->rollback();
-					throw new RuntimeException(implode(' ;', $involved->getMessages()));
+					$this->transaction->rollback(implode(' ;', $involved->getMessages()));
+				}
+			}
+			
+			// Lost items (destroyed, dropped)
+			foreach ($killData->items as $itemData) {
+				$lost = new LostItems();
+				$involved->setTransaction($this->transaction);
+				
+				$lost->kill_id       = $killData->killID;
+				$lost->item_id       = $itemData->typeID;
+				$lost->flag          = $itemData->flag;
+				$lost->qty_destroyed = $itemData->qtyDestroyed;
+				$lost->qty_dropped   = $itemData->qtyDropped;
+				
+				if (! $lost->save()) {
+					$this->transaction->rollback(implode(' ;', $lost->getMessages()));
 				}
 			}
 		}
 		
+		// Items data from API
 		if (! empty($needItemsIds)) {
-			$chunks = array_chunk($needItemsIds, 100);
-			
-			foreach ($chunks as $chunk) {
-				$items = $this->client->Eve->TypeName(implode(',', $chunk));
-				
-				foreach ($items as $itemId => $itemTitle) {
-					$item = new Items();
-					$item->setTransaction($this->transaction);
-
-					$item->item_id = $itemId;
-					$item->title   = $itemTitle;
-					
-					if (! $item->save()) {
-						$this->transaction->rollback();
-						throw new RuntimeException(implode(' ;', $item->getMessages()));
-					}
-				}
-			}
-			
+			$this->getAndSaveItemsData($existsItemsIds);
 		}
 		
 		$this->transaction->commit();
+	}
+	
+	protected function getAndSaveItemsData(array $needItemsIds) {
+		$chunks = array_chunk($needItemsIds, 100);
+			
+		foreach ($chunks as $chunk) {
+			$items = $this->client->Eve->TypeName(implode(',', $chunk));
+
+			foreach ($items as $itemId => $itemTitle) {
+				$item = new Items();
+				$item->setTransaction($this->transaction);
+
+				$item->item_id = $itemId;
+				$item->title   = $itemTitle;
+
+				if (! $item->save()) {
+					$this->transaction->rollback(implode(' ;', $item->getMessages()));
+				}
+			}
+		}
 	}
 	
 	protected function saveAllianceData($allyId, $allyTitle) {
@@ -214,8 +242,7 @@ class KillsService {
 		$ally->title       = $allyTitle;
 
 		if (! $ally->save()) {
-			$this->transaction->rollback();
-			throw new RuntimeException(implode(' ;', $ally->getMessages()));
+			$this->transaction->rollback(implode(' ;', $ally->getMessages()));
 		}
 	}
 	
@@ -234,8 +261,7 @@ class KillsService {
 		$corp->alliance_id = $allyId;
 
 		if (! $corp->save()) {
-			$this->transaction->rollback();
-			throw new RuntimeException(implode(' ;', $corp->getMessages()));
+			$this->transaction->rollback(implode(' ;', $corp->getMessages()));
 		}
 	}
 	
@@ -254,8 +280,7 @@ class KillsService {
 		$player->corp_id   = $corpId;
 
 		if (! $player->save()) {
-			$this->transaction->rollback();
-			throw new RuntimeException(implode(' ;', $player->getMessages()));
+			$this->transaction->rollback(implode(' ;', $player->getMessages()));
 		}	
 	}
 	
