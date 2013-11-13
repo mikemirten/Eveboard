@@ -3,7 +3,7 @@ namespace Eveboard\Api;
 
 use Eveboard\Api\Exceptions\RequestError;
 use Eveboard\Api\Exceptions\ApiError;
-use SimpleXMLElement;
+use SimpleXMLElement, RuntimeException;
 
 /**
  * Eve-Online API's client
@@ -34,6 +34,17 @@ class Client {
 	 * @var string
 	 */
 	protected $_keyCode;
+	
+	/**
+	 * Constructor
+	 * 
+	 * @throws RuntimeException
+	 */
+	public function __construct() {
+		if (! extension_loaded('curl')) {
+			throw new RuntimeException('Curl extension must be loaded');
+		}
+	}
 	
 	/**
 	 * Set the Key ID / User ID
@@ -102,7 +113,7 @@ class Client {
 		curl_close($curl);
 		
 		if ($response === false) {
-			throw new RequestError("Unable to perform the request: $errorStr; Url: $url", $errorNm);
+			throw new RequestError("Unable to perform the request: \"$errorStr\"; Url: \"$url\"", $errorNm);
 		}
 		
 		$document = new SimpleXMLElement($response);
@@ -111,11 +122,11 @@ class Client {
 			$errAttrs = $document->error->attributes();
 			$errorNm  = isset($errAttrs->code) ? (int) $errAttrs->code : 0;
 			
-			throw new ApiError("Invalid request: $document->error; Url: $url", $errorNm);
+			throw new ApiError("Invalid request: \"$document->error\"; Url: \"$url\"", $errorNm);
 		}
 		
 		if (! isset ($document->result)) {
-			throw new RequestError("Have no result; Url: $url");
+			throw new RequestError("Have no result; Url: \"$url\"");
 		}
 		
 		return $document->result;
