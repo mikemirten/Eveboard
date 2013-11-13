@@ -202,7 +202,7 @@ class KillsService {
 		
 		// Items data from API
 		if (! empty($needItemsIds)) {
-			$this->getAndSaveItemsData($existsItemsIds);
+			$this->getAndSaveItemsData($needItemsIds);
 		}
 		
 		$this->transaction->commit();
