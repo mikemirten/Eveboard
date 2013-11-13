@@ -2,9 +2,13 @@
 use Phalcon\Mvc\Controller;
 use Phalcon\Mvc\Model\Resultset;
 
-class IndexController extends Controller {
+class KillboardController extends Controller {
 	
 	public function indexAction() {
+		$this->dispatcher->forward(['action' => 'kills']);
+	}
+	
+	public function killsAction() {
 		$kills = Kills::getLastKills(1411711376)->toArray();
 		
 		// Gathering ids
