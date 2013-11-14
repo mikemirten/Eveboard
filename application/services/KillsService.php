@@ -31,8 +31,9 @@ class KillsService {
 				$kills = $this->client->corp->killLog($lastKillId);
 			}
 		} catch (ApiError $exception) {
-			// Kill log exhausted
-			if ($exception->getCode() === 119) {
+			$errorCode = $exception->getCode();
+			// No fresh kills || Kill log exhausted
+			if ($errorCode === 118 || $errorCode === 119) {
 				return;
 			}
 			
