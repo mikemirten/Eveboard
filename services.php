@@ -7,7 +7,13 @@ use Eveboard\Api\Client as EveApiClient;
 
 // Global config
 $di->set('config', function() {
-	return new Ini(CONF_PATH . DIRECTORY_SEPARATOR . 'settings.ini');
+	$configPath = CONF_PATH . DIRECTORY_SEPARATOR . 'settings.ini';
+	
+	if (! is_file($configPath)) {
+		copy(CONF_PATH . DIRECTORY_SEPARATOR . 'settings.template.ini', $configPath);
+	}
+	
+	return new Ini($configPath);
 }, true);
 
 // Database
