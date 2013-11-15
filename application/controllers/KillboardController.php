@@ -128,4 +128,16 @@ class KillboardController extends Controller {
 		$this->view->kills = $kills;
 	}
 	
+	public function lossesAction() {
+		$this->view->pick('killboard/kills');
+	}
+	
+	public function corpsAction() {
+		$this->view->pick('killboard/kills');
+	}
+	
+	public function membersAction() {
+		$this->view->pick('killboard/kills');
+	}
+	
 }

@@ -63,7 +63,8 @@ body {
 }
 
 .menu li.active a {
-	background: #822;
+	background:     #822;
+	pointer-events: none;
 }
 
 .killtable {

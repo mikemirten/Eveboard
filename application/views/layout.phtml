@@ -2,19 +2,29 @@
 <html lang="en">
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <?= $this->tag->getTitle() ?>
-    <?//= $this->tag->javascriptInclude('js/jquery.min.js') ?>
-    <?= $this->tag->stylesheetLink('css/main.css') ?>
+	<?= $this->tag->getTitle() ?>
+	<?//= $this->tag->javascriptInclude('js/jquery.min.js') ?>
+	<?= $this->tag->stylesheetLink('css/main.css') ?>
 </head>
 <body>
 <div class="container">
 	<div class="head">
 		<h1 class="title"><?= $this->config->alliance->title ?></h1>
 		<ul class="menu">
-			<li class="active"><a href="/killboard/kills">Kills</a></li>
-			<li><a href="/killboard/losses">Losses</a></li>
-			<li><a href="/killboard/corps">Corporations</a></li>
-			<li><a href="/killboard/members">Members</a></li>
+			<? $actionName = $this->getView()->getActionName() ?>
+
+			<li<? if ($actionName === 'kills'): ?> class="active"<? endif ?>>
+				<a href="/killboard/kills">Kills</a>
+			</li>
+			<li<? if ($actionName === 'losses'): ?> class="active"<? endif ?>>
+				<a href="/killboard/losses">Losses</a>
+			</li>
+			<li<? if ($actionName === 'corps'): ?> class="active"<? endif ?>>
+				<a href="/killboard/corps">Corporations</a>
+			</li>
+			<li<? if ($actionName === 'members'): ?> class="active"<? endif ?>>
+				<a href="/killboard/members">Members</a>
+			</li>
 		</ul>
 	</div>
 	<?= $this->getContent() ?>
