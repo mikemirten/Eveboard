@@ -14,17 +14,19 @@
 			<? $actionName = $this->getView()->getActionName() ?>
 
 			<li<? if ($actionName === 'kills'): ?> class="active"<? endif ?>>
-				<a href="/killboard/kills">Kills</a>
+				<?= $this->tag->linkTo('killboard/kills', 'Kills') ?>
 			</li>
 			<li<? if ($actionName === 'losses'): ?> class="active"<? endif ?>>
-				<a href="/killboard/losses">Losses</a>
+				<?= $this->tag->linkTo('killboard/losses/alliance/' . $this->config->alliance->id, 'Losses') ?>
 			</li>
+			<? /*
 			<li<? if ($actionName === 'corps'): ?> class="active"<? endif ?>>
-				<a href="/killboard/corps">Corporations</a>
+				<?= $this->tag->linkTo('killboard/corps', 'Corporations') ?>
 			</li>
 			<li<? if ($actionName === 'members'): ?> class="active"<? endif ?>>
-				<a href="/killboard/members">Members</a>
+				<?= $this->tag->linkTo('killboard/members', 'Members') ?>
 			</li>
+			*/ ?>
 		</ul>
 	</div>
 	<?= $this->getContent() ?>
