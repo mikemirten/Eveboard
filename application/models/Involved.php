@@ -11,7 +11,7 @@ class Involved extends Model {
 	 * @return array [killId => involvedNumber]
 	 */
 	static public function getInvolvedByKillsIds(array $ids) {
-		$result = (new Builder)
+		$result = (new Builder())
 			->from('Involved')
 			->columns(['kill_id', 'count' => 'count(*)'])
 			->where('kill_id in(' . implode(',', $ids) . ')')
