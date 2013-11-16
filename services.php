@@ -2,6 +2,7 @@
 
 use Phalcon\Config\Adapter\Ini;
 use Phalcon\Mvc\View;
+use Phalcon\Mvc\Url;
 use Phalcon\Db\Adapter\Pdo\Mysql;
 use Eveboard\Api\Client as EveApiClient;
 
@@ -28,6 +29,13 @@ $di->set('view', function() {
 	$view->setMainView('layout');
 	
 	return $view;
+}, true);
+
+$di->set('url', function() use($di) {
+	$url = new Url($di);
+	$url->setBaseUri($di->get('config')->common->baseUrl . '/');
+	
+	return $url;
 }, true);
 
 // Eve API Client
