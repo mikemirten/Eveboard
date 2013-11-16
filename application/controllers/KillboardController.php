@@ -9,8 +9,64 @@ class KillboardController extends Controller {
 	}
 	
 	public function killsAction() {
-		$allyId = $this->config->alliance->id;
-		$kills  = Kills::getLastKills($allyId)->toArray();
+		$this->view->pick('killboard/kills');
+		
+		$this->killboard();
+	}
+	
+	public function lossesAction() {
+		$this->view->pick('killboard/kills');
+		
+		$this->killboard(true);
+	}
+	
+	public function corpsAction() {
+		$this->view->pick('killboard/kills');
+		
+		$this->killboard();
+	}
+	
+	public function membersAction() {
+		$this->view->pick('killboard/kills');
+		
+		$this->killboard();
+	}
+	
+	protected function killboard() {
+		$homeAllyId = $this->config->alliance->id;
+		
+		// Assemble query
+		$allyId = $this->dispatcher->getParam('alliance', 'int');
+		$corpId = $this->dispatcher->getParam('corp', 'int');
+		$itemId = $this->dispatcher->getParam('item', 'int');
+		$charId = $this->dispatcher->getParam('char', 'int');
+		$params = [];
+		
+		if ($allyId !== null) {
+			$params['alliance'] = (int) $allyId;
+		} else {
+			$params['alliance'] = - $homeAllyId;
+		}
+		
+		if ($corpId !== null) {
+			$params['corp'] = (int) $corpId;
+		}
+		
+		if ($itemId !== null) {
+			$params['item'] = (int) $itemId;
+		}
+		
+		if ($charId !== null) {
+			$params['char'] = (int) $charId;
+		}
+		
+		$page = (int) $this->dispatcher->getParam('page', 'int', 1);
+		Kills::setPerpage($this->config->killboard->killsPerPage);
+		
+		$paginator = Kills::getLastKills($params, $page);
+		$kills     = $paginator->items->toArray();
+		
+		unset($paginator->items);
 		
 		// Gathering ids
 		$killIds      = [];
@@ -125,19 +181,26 @@ class KillboardController extends Controller {
 			}
 		}
 		
-		$this->view->kills = $kills;
-	}
-	
-	public function lossesAction() {
-		$this->view->pick('killboard/kills');
-	}
-	
-	public function corpsAction() {
-		$this->view->pick('killboard/kills');
-	}
-	
-	public function membersAction() {
-		$this->view->pick('killboard/kills');
+		if (isset($params['alliance'])
+		&&  $params['alliance'] === - $homeAllyId) {
+			unset($params['alliance']);
+		}
+		
+		$this->view->kills       = $kills;
+		$this->view->pagination  = $paginator;
+		$this->view->queryParams = $params;
+		
+		// Pagination base URL
+		$dispatcher = $this->getDi()->get('dispatcher');
+		$action     = $dispatcher->getActionName();
+		
+		$paginationUrl = 'killboard/' . $action . '/';
+		
+		foreach ($params as $param => $value) {
+			$paginationUrl .= $param . '/' . $value . '/';
+		}
+		
+		$this->view->paginationUrl = $this->url->get($paginationUrl . 'page/');
 	}
 	
 }

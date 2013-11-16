@@ -18,11 +18,11 @@ body {
 }
 
 .container {
-	margin:    0 auto;
-	min-width: 480px;
-	max-width: 1200px;
-	box-shadow:  0 0 10px #000;
-	background:  rgba(0, 0, 0, 0.8);
+	margin:     0 auto;
+	min-width:  480px;
+	max-width:  1200px;
+	box-shadow: 0 0 10px #000;
+	background: rgba(0, 0, 0, 0.8);
 }
 
 .title {
@@ -63,8 +63,8 @@ body {
 }
 
 .menu li.active a {
-	background:     #822;
-	pointer-events: none;
+	background: #822;
+	color:      #fff;
 }
 
 .killtable {
@@ -111,4 +111,20 @@ body {
 
 .victim-corp {
 	color: #c97;
+}
+
+.pagination {
+	margin: 0.5em 0;
+}
+
+.pagination li {
+	display: inline-block;
+}
+
+.pagination li a {
+	display:         block;
+	padding:         0.25em 0.5em;
+	color:           #fff;
+	text-decoration: none;
+	font-weight:     bold;
 }

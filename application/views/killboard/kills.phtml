@@ -26,22 +26,22 @@
 			<td><?= $kill->committed ?></td>
 			<td>
 				<? if ($kill->character_id != 0): ?>
-				<a href="#<?= $kill->character_id ?>"><?= $kill->character_name ?></a>
+				<a href="/killboard/kills/char/<?= $kill->character_id ?>"><?= $kill->character_name ?></a>
 				<? else: ?>
 				<span class="victim-corp">Corporation property</span>
 				<? endif ?>
 			</td>
 			<td>
-				<a href="#<?= $kill->item_id ?>"><?= $kill->item_title ?></a>
+				<a href="/killboard/kills/item/<?= $kill->item_id ?>"><?= $kill->item_title ?></a>
 			</td>
 			<td>
 				<? if ($kill->corp_id != 0): ?>
-				<a href="#<?= $kill->corp_id ?>"><?= $kill->corp_title ?></a>
+				<a href="/killboard/kills/corp/<?= $kill->corp_id ?>"><?= $kill->corp_title ?></a>
 				<? endif ?>
 			</td>
 			<td>
 				<? if ($kill->alliance_id != 0): ?>
-				<a href="#<?= $kill->alliance_id ?>"><?= $kill->alliance_title ?></a>
+				<a href="/killboard/kills/alliance/<?= $kill->alliance_id ?>"><?= $kill->alliance_title ?></a>
 				<? endif ?>
 			</td>
 			<td><?= $kill->involved_number ?></td>
@@ -49,4 +49,23 @@
 		<? endforeach ?>
 	</tbody>
 </table>
+<? if ($pagination->total_pages > 1): ?>
+<ul class="pagination">
+	<? if ($pagination->current > 1): ?>
+		<? if ($pagination->current > 2): ?>
+		<li><a href="<?= $paginationUrl . $pagination->first ?>"><<</a></li>
+		<? endif ?>
+		<li><a href="<?= $paginationUrl . $pagination->before ?>"><</a></li>
+	<? endif ?>
+		
+	<li><a href="<?= $paginationUrl . $pagination->current ?>"><?= $pagination->current ?></a></li>
+	
+	<? if ($pagination->current < $pagination->total_pages): ?>
+		<li><a href="<?= $paginationUrl . $pagination->next ?>">></a></li>
+		<? if ($pagination->current + 1 < $pagination->total_pages): ?>
+		<li><a href="<?= $paginationUrl . $pagination->last ?>">>></a></li>
+		<? endif ?>
+	<? endif ?>
+</ul>
+<? endif ?>
 <? endif ?>
