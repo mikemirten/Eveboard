@@ -3,6 +3,8 @@ Eveboard
 
 Eve-online information board
 
+Version 0.6beta
+
 ###Requirements
 
 * PHP 5.4 or later
