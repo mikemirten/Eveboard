@@ -8,7 +8,8 @@ CREATE TABLE `kills` (
 	`system_id`    int unsigned NOT NULL,
 	`moon_id`      int unsigned NOT NULL,
 	`committed`    timestamp NOT NULL,
-	`damage_taken` bigint unsigned
+	`damage_taken` bigint unsigned,
+	KEY `corp` (`corp_id`)
 );
 
 CREATE TABLE `involved` (
