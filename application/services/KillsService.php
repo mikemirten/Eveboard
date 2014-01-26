@@ -13,27 +13,45 @@ class KillsService {
 	 */
 	protected $client;
 	
-	protected $transaction;
+	protected $apiConfig;
 	
 	protected $alliancesIds, $corpsIds, $playersIds;
 	
-	public function __construct(Client $client) {
-		$this->client = $client;
+	public function __construct(Client $client, $apiConfig) {
+		$this->client    = $client;
+		$this->apiConfig = $apiConfig;
+	}
+	
+	public function importKills() {
+		$transactionManager = new Manager();
+		
+		foreach ($this->apiConfig as $corp) {
+			$this->client->setKeyId($corp->keyId);
+			$this->client->setKeyCode($corp->keyCode);
+			
+			$this->importCorpKills($this->client, $transactionManager);
+		}
 	}
 
-	public function importKills() {
-		$lastKillId = Kills::getLastKillId();
+	protected function importCorpKills(Client $client, $transactionManager) {
+		$corpSheet  = $client->corp->corporationSheet();
+		$lastKillId = Kills::getLastKillId($corpSheet->corporationID);
 		
 		try {
 			if ($lastKillId === null) {
-				$kills = $this->client->corp->killLog();
+				$kills = $client->corp->killLog();
 			} else {
-				$kills = $this->client->corp->killLog($lastKillId);
+				$kills = $client->corp->killLog($lastKillId);
 			}
 		} catch (ApiError $exception) {
 			$errorCode = $exception->getCode();
-			// No fresh kills || Kill log exhausted
-			if ($errorCode === 118 || $errorCode === 119) {
+			
+			// No fresh kills
+			if ($errorCode === 118
+			// Kill log exhausted
+			||  $errorCode === 119
+			// Unexpected beforeKillID
+			||  $errorCode === 120) {
 				return;
 			}
 			
@@ -132,104 +150,167 @@ class KillsService {
 		$needItemsIds = array_keys(array_diff_key($itemsIds, $existsItemsIds));
 		unset($existsItemsIds, $itemsIds, $item);
 		
-		$transactionManager = new Manager();
-		$this->transaction  = $transactionManager->get();
+		$transaction = $transactionManager->get();
 		
+		// Kills
 		foreach ($kills as $killData) {
-			$this->saveAllianceData($killData->allianceID, $killData->allianceName);
-			$this->saveCorpData($killData->corporationID, $killData->allianceID, $killData->corporationName);
-			$this->savePlayerData($killData->characterID, $killData->corporationID, $killData->characterName);
-			
-			// Save kill
-			$kill = new Kills();
-			$kill->setTransaction($this->transaction);
-			
-			$kill->kill_id      = $killData->killID;
-			$kill->character_id = $killData->characterID;
-			$kill->corp_id      = $killData->corporationID;
-			$kill->alliance_id  = $killData->allianceID;
-			$kill->faction_id   = $killData->factionID;
-			$kill->item_id      = $killData->shipTypeID;
-			$kill->system_id    = $killData->solarSystemID;
-			$kill->moon_id      = $killData->moonID;
-			$kill->committed    = $killData->killTime;
-			$kill->damage_taken = $killData->damageTaken;
-			
-			if (! $kill->save()) {
-				$this->transaction->rollback(implode(' ;', $kill->getMessages()));
-			}
-			
-			// Save involved parties
-			foreach ($killData->parts as $partData) {
-				$this->saveAllianceData($partData->allianceID, $partData->allianceName);
-				$this->saveCorpData($partData->corporationID, $partData->allianceID, $partData->corporationName);
-				$this->savePlayerData($partData->characterID, $partData->corporationID, $partData->characterName);
-				
-				// Save involved data
-				$involved = new Involved();
-				$involved->setTransaction($this->transaction);
-				
-				$involved->kill_id      = $killData->killID;
-				$involved->character_id = $partData->characterID;
-				$involved->corp_id      = $partData->corporationID;
-				$involved->alliance_id  = $partData->allianceID;
-				$involved->faction_id   = $partData->factionID;
-				$involved->ship_id      = $partData->shipTypeID;
-				$involved->weapon_id    = $partData->weaponTypeID;
-				$involved->damage_done  = $partData->damageDone;
-				$involved->final_blow   = $partData->finalBlow;
-				
-				if (! $involved->save()) {
-					$this->transaction->rollback(implode(' ;', $involved->getMessages()));
-				}
-			}
-			
-			// Lost items (destroyed, dropped)
-			foreach ($killData->items as $itemData) {
-				$lost = new LostItems();
-				$involved->setTransaction($this->transaction);
-				
-				$lost->kill_id       = $killData->killID;
-				$lost->item_id       = $itemData->typeID;
-				$lost->flag          = $itemData->flag;
-				$lost->qty_destroyed = $itemData->qtyDestroyed;
-				$lost->qty_dropped   = $itemData->qtyDropped;
-				
-				if (! $lost->save()) {
-					$this->transaction->rollback(implode(' ;', $lost->getMessages()));
-				}
-			}
+			$this->saveKill($killData, $transaction);
 		}
 		
 		// Items data from API
 		if (! empty($needItemsIds)) {
-			$this->getAndSaveItemsData($needItemsIds);
+			$this->getAndSaveItemsData($needItemsIds, $client, $transaction);
 		}
 		
-		$this->transaction->commit();
+		$transaction->commit();
 	}
 	
-	protected function getAndSaveItemsData(array $needItemsIds) {
+	/**
+	 * Save the committed kill
+	 * 
+	 * @param type $killData
+	 * @param type $transaction
+	 */
+	protected function saveKill($killData, $transaction) {
+		$this->saveMemberData($killData, $transaction);
+		$this->saveKillData($killData, $transaction);
+		
+		// Involved parties
+		foreach ($killData->parts as $partData) {
+			$this->saveInvolvedParty($killData->killID, $partData, $transaction);
+		}
+
+		// Lost items (destroyed, dropped)
+		foreach ($killData->items as $itemData) {
+			$this->saveLostItem($killData->killID, $itemData, $transaction);
+		}
+	}
+	
+	/**
+	 * Save the primary data of the kill
+	 * 
+	 * @param type $killData
+	 * @param type $transaction
+	 */
+	protected function saveKillData($killData, $transaction) {
+		$kill = new Kills();
+		$kill->setTransaction($transaction);
+
+		$kill->kill_id      = $killData->killID;
+		$kill->character_id = $killData->characterID;
+		$kill->corp_id      = $killData->corporationID;
+		$kill->alliance_id  = $killData->allianceID;
+		$kill->faction_id   = $killData->factionID;
+		$kill->item_id      = $killData->shipTypeID;
+		$kill->system_id    = $killData->solarSystemID;
+		$kill->moon_id      = $killData->moonID;
+		$kill->committed    = $killData->killTime;
+		$kill->damage_taken = $killData->damageTaken;
+
+		if (! $kill->save()) {
+			$transaction->rollback(implode(' ;', $kill->getMessages()));
+		}
+	}
+	
+	/**
+	 * Save the involved parties data
+	 * 
+	 * @param int  $killId
+	 * @param type $data
+	 * @param type $transaction
+	 */
+	protected function saveInvolvedParty($killId, $data, $transaction) {
+		$this->saveMemberData($data, $transaction);
+		
+		$involved = new Involved();
+		$involved->setTransaction($transaction);
+
+		$involved->kill_id      = $killId;
+		$involved->character_id = $data->characterID;
+		$involved->corp_id      = $data->corporationID;
+		$involved->alliance_id  = $data->allianceID;
+		$involved->faction_id   = $data->factionID;
+		$involved->ship_id      = $data->shipTypeID;
+		$involved->weapon_id    = $data->weaponTypeID;
+		$involved->damage_done  = $data->damageDone;
+		$involved->final_blow   = $data->finalBlow;
+
+		if (! $involved->save()) {
+			$transaction->rollback(implode(' ;', $involved->getMessages()));
+		}
+	}
+	
+	/**
+	 * Save the data of involved member (killer or an other member)
+	 * 
+	 * @param type $data
+	 * @param type $transaction
+	 */
+	protected function saveMemberData($data, $transaction) {
+		$this->saveAllianceData(
+			$data->allianceID,
+			$data->allianceName,
+			$transaction
+		);
+		
+		$this->saveCorpData(
+			$data->corporationID,
+			$data->allianceID,
+			$data->corporationName, 
+			$transaction
+		);
+		
+		$this->savePlayerData(
+			$data->characterID,
+			$data->corporationID,
+			$data->characterName,
+			$transaction
+		);
+	}
+	
+	/**
+	 * Save the lost item
+	 * 
+	 * @param int  $killId
+	 * @param type $data
+	 * @param type $transaction
+	 */
+	protected function saveLostItem($killId, $data, $transaction) {
+		$lost = new LostItems();
+		$lost->setTransaction($transaction);
+
+		$lost->kill_id       = $killId;
+		$lost->item_id       = $data->typeID;
+		$lost->flag          = $data->flag;
+		$lost->qty_destroyed = $data->qtyDestroyed;
+		$lost->qty_dropped   = $data->qtyDropped;
+
+		if (! $lost->save()) {
+			$transaction->rollback(implode(' ;', $lost->getMessages()));
+		}
+	}
+	
+	protected function getAndSaveItemsData(array $needItemsIds, Client $client, $transaction) {
 		$chunks = array_chunk($needItemsIds, 100);
 			
 		foreach ($chunks as $chunk) {
-			$items = $this->client->Eve->TypeName(implode(',', $chunk));
+			$items = $client->Eve->TypeName(implode(',', $chunk));
 
 			foreach ($items as $itemId => $itemTitle) {
 				$item = new Items();
-				$item->setTransaction($this->transaction);
+				$item->setTransaction($transaction);
 
 				$item->item_id = $itemId;
 				$item->title   = $itemTitle;
 
 				if (! $item->save()) {
-					$this->transaction->rollback(implode(' ;', $item->getMessages()));
+					$transaction->rollback(implode(' ;', $item->getMessages()));
 				}
 			}
 		}
 	}
 	
-	protected function saveAllianceData($allyId, $allyTitle) {
+	protected function saveAllianceData($allyId, $allyTitle, $transaction) {
 		if ($allyId === 0 || isset($this->alliancesIds[$allyId])) {
 			return;
 		}
@@ -237,17 +318,17 @@ class KillsService {
 		$this->alliancesIds[$allyId] = true;
 
 		$ally = new Alliances();
-		$ally->setTransaction($this->transaction);
+		$ally->setTransaction($transaction);
 
 		$ally->alliance_id = $allyId;
 		$ally->title       = $allyTitle;
 
 		if (! $ally->save()) {
-			$this->transaction->rollback(implode(' ;', $ally->getMessages()));
+			$transaction->rollback(implode(' ;', $ally->getMessages()));
 		}
 	}
 	
-	protected function saveCorpData($corpId, $allyId, $corpTitle) {
+	protected function saveCorpData($corpId, $allyId, $corpTitle, $transaction) {
 		if ($corpId === 0 || isset($this->corpsIds[$corpId])) {
 			return;
 		}
@@ -255,18 +336,18 @@ class KillsService {
 		$this->corpsIds[$corpId] = true;
 
 		$corp = new Corps();
-		$corp->setTransaction($this->transaction);
+		$corp->setTransaction($transaction);
 
 		$corp->corp_id     = $corpId;
 		$corp->title       = $corpTitle;
 		$corp->alliance_id = $allyId;
 
 		if (! $corp->save()) {
-			$this->transaction->rollback(implode(' ;', $corp->getMessages()));
+			$transaction->rollback(implode(' ;', $corp->getMessages()));
 		}
 	}
 	
-	protected function savePlayerData($playerId, $corpId, $playerName) {
+	protected function savePlayerData($playerId, $corpId, $playerName, $transaction) {
 		if ($playerId === 0 || isset($this->playersIds[$playerId])) {
 			return;
 		}
@@ -274,14 +355,14 @@ class KillsService {
 		$this->playersIds[$playerId] = true;
 
 		$player = new Players();
-		$player->setTransaction($this->transaction);
+		$player->setTransaction($transaction);
 
 		$player->player_id = $playerId;
 		$player->name      = $playerName;
 		$player->corp_id   = $corpId;
 
 		if (! $player->save()) {
-			$this->transaction->rollback(implode(' ;', $player->getMessages()));
+			$transaction->rollback(implode(' ;', $player->getMessages()));
 		}	
 	}
 	

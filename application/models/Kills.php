@@ -56,9 +56,10 @@ class Kills extends Model {
 		]))->getPaginate();
 	}
 	
-	static public function getLastKillId() {
+	static public function getLastKillId($corpId) {
 		$row = self::query()
 			->columns(['id' => 'MAX(kill_id)'])
+			->where('corp_id = ' . $corpId)
 			->execute()
 			->getFirst();
 		
