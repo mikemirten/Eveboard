@@ -39,12 +39,8 @@ $di->set('url', function() use($di) {
 }, true);
 
 // Eve API Client
-$di->set('eveApiClient', function() use($di) {
-	$config = $di->get('config')->eveApi;
-	
-	$client =  new EveApiClient();
-	$client->setKeyId($config->keyId);
-	$client->setKeyCode($config->keyCode);
+$di->set('eveApiClient', function() {
+	$client = new EveApiClient();
 	
 	$client->setOnSuccessCallback(function($section, $function, &$params, &$response) {
 		if ($section === 'corp' && $function === 'KillLog') {
@@ -57,5 +53,8 @@ $di->set('eveApiClient', function() use($di) {
 
 // Kills processing service
 $di->set('killService', function() use($di) {
-	return new KillsService($di->get('eveApiClient'));
+	return new KillsService(
+		$di->get('eveApiClient'),
+		$di->get('config')->eveApi
+	);
 }, true);
