@@ -10,7 +10,8 @@ html {
 body {
 	font-family: sans-serif;
 	font-size:   small;
-	background:  #579 url('/img/background.jpg') no-repeat center fixed;
+	background:  #035;
+	background:  linear-gradient(#046, #001);
 }
 
 .head {
