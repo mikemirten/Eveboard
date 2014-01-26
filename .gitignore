@@ -1,3 +1,5 @@
 tmp/*
 log/*
 application/configs/settings.ini
+vendor/*
+composer.lock
